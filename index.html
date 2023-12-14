@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROS 2 WebSocket Subscriber</title>
+</head>
+<body>
+    <h1>ROS 2 WebSocket Subscriber</h1>
+    <div id="message-container"></div>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:9090'); // ROS 2 웹 소켓 포트
+        const topicName = '/topic'; // 노드에서 사용하는 토픽 이름
+
+        socket.addEventListener('open', (event) => {
+            console.log('웹 소켓 연결이 열렸습니다.');
+            socket.send(JSON.stringify({
+                op: 'subscribe',
+                topic: topicName,
+                type: 'std_msgs/String',
+            }));
+        });
+
+        socket.addEventListener('message', (event) => {
+            const message = JSON.parse(event.data);
+            console.log('수신된 메시지:', message);
+
+            // 수신된 메시지를 HTML에 갱신
+            const messageContainer = document.getElementById('message-container');
+            if (message.op === 'publish' && message.topic === topicName) {
+                // data 값에 따라 다른 모드 선택
+                const mode = parseInt(message.msg.data);
+                let gifPath;
+
+                switch (mode) {
+                    case 1:
+                        gifPath = 'blink.gif';
+                        break;
+                    case 2:
+                        gifPath = 'blink_s.gif';
+                        break;
+                    case 3:
+                        gifPath = 'blink_mode3.gif';
+                        break;
+                    default:
+                        gifPath = 'unknown_mode.gif';
+                }
+
+                messageContainer.innerHTML = `<p>수신된 메시지: ${message.msg.data}</p><img src="${gifPath}" alt="Your GIF" style="height:1080px; width: 1920px;">`;
+            }
+        });
+
+        socket.addEventListener('close', (event) => {
+            console.log('웹 소켓 연결이 닫혔습니다.');
+        });
+
+        socket.addEventListener('error', (event) => {
+            console.error('웹 소켓 오류:', event);
+        });
+    </script>
+</body>
+</html>
